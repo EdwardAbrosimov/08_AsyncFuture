@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key}) : super(key: key);
+  MyHomePage({Key? key}) : super(key: key);
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -42,18 +42,15 @@ class _MyHomePageState extends State<MyHomePage> {
               return Center(
                 child: Text('NONE'),
               );
-              break;
             case ConnectionState.active:
               return Text('Active');
             case ConnectionState.waiting:
               return Center(child: CircularProgressIndicator());
-              break;
             case ConnectionState.done:
               return SingleChildScrollView(
                   child: snapshot.data != null
                       ? Text(snapshot.data)
                       : Center(child: const Text('файл не найден')));
-              break;
             default:
               return SingleChildScrollView(
                 child: Text('Default'),
