@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'fetch_file_from_assets.dart';
-
 void main() {
   runApp(MyApp());
 }
@@ -30,23 +28,21 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
+Future<String> fetchFileFromAssets(String fileName) async {
+  try {
+    return await rootBundle
+        .loadString('assets/' + fileName + '.txt')
+        .then((file) => file.toString());
+  } catch (e) {
+    return Future.error('​файл ${fileName} не найден');
+  }
+}
+
 class _MyHomePageState extends State<MyHomePage> {
   final fileNameController = TextEditingController();
 
-  String? fileContent = null;
-  String fileName = '';
-
-  Future<void> getData(String name) async {
-    fileName = name;
-    try {
-      fileContent = await rootBundle
-          .loadString('assets/' + name + '.txt')
-          .then((file) => file.toString());
-    } catch (e) {
-      fileContent = null;
-    }
-    setState(() {});
-  }
+  Future<String>? _fileContent;
+  String _fileName = '';
 
   @override
   void dispose() {
@@ -94,7 +90,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           backgroundColor: Colors.blue),
                       onPressed: () {
-                        getData(fileNameController.text);
+                        _fileName = fileNameController.text;
+                        _fileContent = fetchFileFromAssets(_fileName);
+
+                        setState(() {});
                       },
                       child: const Text(
                         'Найти',
@@ -106,16 +105,20 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               SizedBox(height: 10),
               FutureBuilder<String>(
-                future: fetchFileFromAssets(fileName),
+                future: _fileContent,
                 builder: (BuildContext context, AsyncSnapshot snapshot) {
                   switch (snapshot.connectionState) {
+                    case ConnectionState.none:
+                      return Center(
+                        child: Text('Введите название файла'),
+                      );
                     case ConnectionState.done:
                       return Center(
                         child: snapshot.data != null
-                            ? Text('Содержимое файла ${fileName}.txt:')
-                            : fileName.isEmpty
+                            ? Text('Содержимое файла ${_fileName}.txt:')
+                            : _fileName.isEmpty
                                 ? Text('Введите название файла')
-                                : Text('Файл ${fileName}.txt не найден!'),
+                                : Text('Файл ${_fileName}.txt не найден!'),
                       );
 
                     default:
@@ -126,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
               SizedBox(height: 10),
               Expanded(
                 child: FutureBuilder<String>(
-                  future: fetchFileFromAssets(fileName),
+                  future: _fileContent,
                   builder: (BuildContext context, AsyncSnapshot snapshot) {
                     switch (snapshot.connectionState) {
                       case ConnectionState.none:
