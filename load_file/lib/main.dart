@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'fetch_file_from_assets.dart';
 
 void main() {
   runApp(MyApp());
@@ -28,6 +31,29 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final fileNameController = TextEditingController();
+
+  String? fileContent = null;
+  String fileName = '';
+
+  Future<void> getData(String name) async {
+    fileName = name;
+    try {
+      fileContent = await rootBundle
+          .loadString('assets/' + name + '.txt')
+          .then((file) => file.toString());
+    } catch (e) {
+      fileContent = null;
+    }
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    fileNameController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,29 +61,86 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(15.0),
+        padding: const EdgeInsets.all(16.0),
         child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              TextField(
-                decoration: InputDecoration(
-                  suffix: TextButton(
-                    style: TextButton.styleFrom(backgroundColor: Colors.blue),
-                    onPressed: () {},
-                    child: const Text(
-                      'Найти',
-                      style: TextStyle(color: Colors.white, fontSize: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: fileNameController,
+                      decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                        borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(15),
+                            bottomLeft: const Radius.circular(15)),
+                      )),
                     ),
                   ),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(
-                    const Radius.circular(15.0),
-                  )),
-                ),
+                  SizedBox(
+                    width: 200,
+                    height: 50,
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.only(
+                                topRight: Radius.circular(15),
+                                bottomRight: Radius.circular(15)),
+                          ),
+                          backgroundColor: Colors.blue),
+                      onPressed: () {
+                        getData(fileNameController.text);
+                      },
+                      child: const Text(
+                        'Найти',
+                        style: TextStyle(color: Colors.white, fontSize: 20),
+                      ),
+                    ),
+                  )
+                ],
               ),
-              Text(
-                'You have pushed the button this many times:',
+              SizedBox(height: 10),
+              FutureBuilder<String>(
+                future: fetchFileFromAssets(fileName),
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  switch (snapshot.connectionState) {
+                    case ConnectionState.done:
+                      return Center(
+                        child: snapshot.data != null
+                            ? Text('Содержимое файла ${fileName}.txt:')
+                            : fileName.isEmpty
+                                ? Text('Введите название файла')
+                                : Text('Файл ${fileName}.txt не найден!'),
+                      );
+
+                    default:
+                      return Center(child: CircularProgressIndicator());
+                  }
+                },
+              ),
+              SizedBox(height: 10),
+              Expanded(
+                child: FutureBuilder<String>(
+                  future: fetchFileFromAssets(fileName),
+                  builder: (BuildContext context, AsyncSnapshot snapshot) {
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.none:
+                        return Container();
+                      case ConnectionState.done:
+                        return SingleChildScrollView(
+                            child: snapshot.data != null
+                                ? Text(snapshot.data)
+                                : Container());
+                      default:
+                        return Center(child: CircularProgressIndicator());
+                    }
+                  },
+                ),
               ),
             ],
           ),
