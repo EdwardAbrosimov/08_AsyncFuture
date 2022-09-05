@@ -28,6 +28,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final Future<String> _fileContent = fetchFileFromAssets('assets/data.txt');
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,7 +36,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text('Catch error'),
       ),
       body: FutureBuilder<String>(
-        future: fetchFileFromAssets('assets/somefile.txt'),
+        future: _fileContent,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.none:
@@ -47,10 +48,13 @@ class _MyHomePageState extends State<MyHomePage> {
             case ConnectionState.waiting:
               return Center(child: CircularProgressIndicator());
             case ConnectionState.done:
-              return SingleChildScrollView(
-                  child: snapshot.data != null
-                      ? Text(snapshot.data)
-                      : Center(child: const Text('файл не найден')));
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: SingleChildScrollView(
+                    child: snapshot.data != null
+                        ? Text(snapshot.data)
+                        : Center(child: const Text('файл не найден'))),
+              );
             default:
               return SingleChildScrollView(
                 child: Text('Default'),
